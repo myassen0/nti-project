@@ -1,0 +1,6 @@
+- name: Run script on EC2
+  hosts: all
+  become: yes
+  tasks:
+    - name: Run custom script
+      script: ../script.sh
