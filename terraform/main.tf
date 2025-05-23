@@ -3,10 +3,9 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "deployer1-key"
-  public_key = file("${path.module}/deployer1-key.pub")
+  key_name   = "deployer-key"
+  public_key = file("${path.module}/deployer-key.pub")
 }
-
 
 resource "aws_instance" "web" {
   ami           = "ami-0953476d60561c955"

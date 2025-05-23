@@ -2,9 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_REGION            = 'us-east-1'
+        AWS_REGION = 'us-east-1'
     }
 
     stages {
@@ -12,6 +10,11 @@ pipeline {
             steps {
                 dir('terraform') {
                     sh 'terraform init'
+
+                    // محاول استيراد المفتاح إذا كان موجود مسبقاً
+                    sh 'terraform import aws_key_pair.deployer deployer-key || true'
+
+                    // تطبيق التكوين
                     sh 'terraform apply -auto-approve > tf_output.txt'
                 }
             }
@@ -33,12 +36,6 @@ pipeline {
                     sh 'ansible-playbook -i inventory.ini playbook.yml'
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo '✅ Finished the EC2 + Ansible pipeline!'
         }
     }
 }
