@@ -26,15 +26,17 @@ pipeline {
                 script {
                     def output = readFile('terraform/tf_output.txt')
                     def ec2_ip = output.find(/(\d+\.\d+\.\d+\.\d+)/)
-                    writeFile file: 'ansible/inventory.ini', text: "${ec2_ip} ansible_user=ec2-user"
+                    // تخزين الـ IP في ملف Ansible inventory
+                    writeFile file: 'ansible/inventory.ini', text: "${ec2_ip} ansible_user=ec2-user ansible_ssh_private_key_file=deployer-key.pem"
                 }
             }
         }
 
         stage('Run Ansible Playbook') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    dir('ansible') {
+                dir('ansible') {
+                    // استدعاء SSH key من Jenkins credentials
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         sh 'ansible-playbook -i inventory.ini playbook.yml --private-key=$SSH_KEY --ssh-common-args="-o StrictHostKeyChecking=no"'
                     }
                 }
@@ -42,4 +44,3 @@ pipeline {
         }
     }
 }
-
