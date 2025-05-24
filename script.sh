@@ -80,7 +80,7 @@ sudo bash -c 'cat > /usr/share/nginx/html/index.html <<EOF
 </head>
 <body>
   <img src="https://www.nti.sci.eg/images/logo.png" alt="NTI Logo">
-  <h1>🚀 EC2 Deployed via Jenkins Pipeline</h1>
+    <h1> Automated EC2 Deployment via Jenkins Pipeline</h1>
   <h3>By: Mahmoud Yassen</h3>
   <h3>Supervised by: Eng. Mohamed Swelam</h3>
   <p>This server was provisioned with Terraform and configured using Ansible.</p>
