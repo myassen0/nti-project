@@ -8,17 +8,41 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "========== Starting EC2 initialization =========="
 
+# Detect and use the correct package manager
+echo "[+] Detecting package manager..."
+if command -v apt-get &>/dev/null; then
+    PKG_MANAGER="apt-get"
+    FIREWALL_CMD="ufw"
+elif command -v yum &>/dev/null; then
+    PKG_MANAGER="yum"
+    FIREWALL_CMD="firewalld"
+else
+    echo "Unsupported package manager. Exiting."
+    exit 1
+fi
+
 echo "[+] Updating system packages..."
-sudo apt-get update -y
-sudo apt-get upgrade -y
-
-echo "[+] Installing core packages..."
-sudo apt-get install -y nginx git curl unzip ufw
-
-echo "[+] Configuring UFW firewall rules..."
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
-sudo ufw --force enable
+if [ "$PKG_MANAGER" = "apt-get" ]; then
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+    echo "[+] Installing core packages..."
+    sudo apt-get install -y nginx git curl unzip ufw
+    echo "[+] Configuring UFW firewall rules..."
+    sudo ufw allow OpenSSH
+    sudo ufw allow 'Nginx Full'
+    sudo ufw --force enable
+else
+    sudo yum update -y
+    echo "[+] Installing core packages..."
+    sudo yum install -y nginx git curl unzip
+    echo "[+] Starting and enabling firewalld..."
+    sudo systemctl enable firewalld
+    sudo systemctl start firewalld
+    sudo firewall-cmd --permanent --add-service=ssh
+    sudo firewall-cmd --permanent --add-service=http
+    sudo firewall-cmd --permanent --add-service=https
+    sudo firewall-cmd --reload
+fi
 
 echo "[+] Starting and enabling NGINX..."
 sudo systemctl enable nginx
