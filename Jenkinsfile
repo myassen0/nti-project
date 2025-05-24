@@ -26,15 +26,17 @@ pipeline {
                 script {
                     def output = readFile('terraform/tf_output.txt')
                     def ec2_ip = output.find(/(\d+\.\d+\.\d+\.\d+)/)
-                    writeFile file: 'ansible/inventory.ini', text: "${ec2_ip} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/deployer-key"
+                    writeFile file: 'ansible/inventory.ini', text: "${ec2_ip} ansible_user=ec2-user"
                 }
             }
         }
 
         stage('Run Ansible Playbook') {
             steps {
-                dir('ansible') {
-                    sh 'ansible-playbook -i inventory.ini playbook.yml --ssh-common-args="-o StrictHostKeyChecking=no"'
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    dir('ansible') {
+                        sh 'ansible-playbook -i inventory.ini playbook.yml --private-key=$SSH_KEY --ssh-common-args="-o StrictHostKeyChecking=no"'
+                    }
                 }
             }
         }
