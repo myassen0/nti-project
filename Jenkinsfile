@@ -9,13 +9,14 @@ pipeline {
         stage('Terraform Init & Apply') {
             steps {
                 dir('terraform') {
-                    sh 'terraform init'
-
-                    // محاول استيراد المفتاح إذا كان موجود مسبقاً
-                    sh 'terraform import aws_key_pair.deployer deployer-key || true'
-
-                    // تطبيق التكوين
-                    sh 'terraform apply -auto-approve > tf_output.txt'
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh 'terraform init'
+                        sh 'terraform import aws_key_pair.deployer deployer-key || true'
+                        sh 'terraform apply -auto-approve > tf_output.txt'
+                    }
                 }
             }
         }
