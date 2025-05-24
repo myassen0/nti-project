@@ -26,8 +26,7 @@ pipeline {
                 script {
                     def output = readFile('terraform/tf_output.txt')
                     def ec2_ip = output.find(/(\d+\.\d+\.\d+\.\d+)/)
-                    // تخزين الـ IP في ملف Ansible inventory
-                    writeFile file: 'ansible/inventory.ini', text: "${ec2_ip} ansible_user=ec2-user ansible_ssh_private_key_file=deployer-key.pem"
+                    writeFile file: 'ansible/ec2_ip.txt', text: ec2_ip
                 }
             }
         }
@@ -35,9 +34,14 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir('ansible') {
-                    // استدعاء SSH key من Jenkins credentials
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                        sh 'ansible-playbook -i inventory.ini playbook.yml --private-key=$SSH_KEY --ssh-common-args="-o StrictHostKeyChecking=no"'
+                        script {
+                            def ip = readFile('ec2_ip.txt').trim()
+                            sh """
+                                echo '${ip} ansible_user=ec2-user ansible_ssh_private_key_file=${SSH_KEY}' > dynamic_inventory.ini
+                                ansible-playbook -i dynamic_inventory.ini playbook.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+                            """
+                        }
                     }
                 }
             }
